@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!---
+This class is a very simplistic Redis client. Supports the new unified protocol.
+Note: Once the client enters the subscripted state it is not supposed to issue any other commands, expect for additional SUBSCRIBE, PSUBSCRIBE, UNSUBSCRIBE and PUNSUBSCRIBE commands.
+
+TODO: 
+ - support encoding of string in quotes with spaces.
+ - dispatch ioError and securityError
+-->
+<events:EventDispatcher xmlns:fx="http://ns.adobe.com/mxml/2009" 
+                        xmlns:s="library://ns.adobe.com/flex/spark" 
+                        xmlns:mx="library://ns.adobe.com/flex/mx"
+                        xmlns:net="flash.net.*"
+                        xmlns:events="flash.events.*"
+                        >
+  <fx:Metadata> 
+    [Event(name="connected")]
+    [Event(name="result",type="redis.events.ResultEvent")]  
+  </fx:Metadata>  
+  <fx:Declarations>
+    <net:Socket id="socket"
+                   connect="connectHandler(event)"                    
+                   close="closeHandler(event)" 
+                   ioError="ioErrorHandler(event)" 
+                   securityError="securityErrorHandler(event)"
+                   socketData="socketDataHandler(event)"
+     /> 
+  </fx:Declarations>
+  <fx:Script>
+    <![CDATA[
+      import redis.events.ResultEvent;
+      [Bindable] public var hostName:String = "127.0.0.1"; 
+      [Bindable] public var port:uint = 6379;
+      
+      public function connect():void {
+        //Security.loadPolicyFile('http://localhost:3000/crossdomain.xml');
+        //Security.loadPolicyFile('xmlsocket://' + hostName + ':' + port);
+        socket.connect(hostName, port);
+      }    
+      
+      public function send(command:String):void {
+        command = encode(command);
+        socket.writeUTFBytes(command);
+      }
+      
+      /**
+       *         *<number of arguments> CR LF
+       *         $<number of bytes of argument 1> CR LF
+       *         <argument data> CR LF
+       *         ...
+       *         $<number of bytes of argument N> CR LF
+       *         <argument data> CR LF
+       */
+      public function encode(command:String):String {
+        var parts:Array = command.split(" ");
+        var result:Array = [];
+        result.push("*"+parts.length);
+        for each (var part:String in parts) {
+          result.push("$"+part.length);
+          result.push(part);
+        }
+        return result.join("\r\n")+"\r\n";
+      }
+      
+      public function decode(command:String):Array {
+        var parts:Array = command.split("\r\n");
+        parts.shift(); // remove first
+        var results:Array = [];
+        for (var i:Number=0; i<parts.length; i++) {
+          var line:String = parts[i];
+          if ( i % 2==0 && line.match(/^\$/) ) continue; // skip the $length indicator.
+          results.push(line);
+        }
+        if (results.length>0&&results[results.length-1]=="") results.pop();
+        return results;
+      }
+      
+      protected function closeHandler(event:Event):void {
+        log("ioErrorHandler: " + event);
+      }
+      
+      protected function connectHandler(event:Event):void {
+        log("connected");
+        dispatchEvent(new Event("connected"));
+      }
+      
+      protected function dataHandler(event:Object):void {
+        var data:Object = event.data
+        log("dataHandler" + data);
+        dispatchEvent(new ResultEvent(data.toString()));
+      }
+      
+      private function socketDataHandler(event:ProgressEvent):void {
+        log("socketDataHandler: " + event);
+        var str:String = socket.readUTFBytes(socket.bytesAvailable);
+        dispatchEvent(new ResultEvent(decode(str)));
+      }      
+      
+      protected function ioErrorHandler(event:IOErrorEvent):void {
+        log("ioErrorHandler: " + event);
+      }
+      
+      protected function securityErrorHandler(event:SecurityErrorEvent):void {
+        log("securityErrorHandler: " + event);
+      }
+      
+      protected function log(msg:String):void {
+        //trace(msg);
+      }        
+    ]]>
+  </fx:Script>  
+</events:EventDispatcher>

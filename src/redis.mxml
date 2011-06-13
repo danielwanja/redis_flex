@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+               xmlns:s="library://ns.adobe.com/flex/spark" 
+               xmlns:mx="library://ns.adobe.com/flex/mx" minWidth="955" minHeight="600" 
+               xmlns:redis="redis.*"
+               applicationComplete="setup()">
+  <fx:Declarations>
+    <redis:Redis id="server"
+                 connected="server_connectedHandler(event)"
+                 result="server_resultHandler(event)" />
+  </fx:Declarations>
+  <fx:Script>
+    <![CDATA[
+      import redis.events.ResultEvent;
+      private function setup():void {
+        server.connect();
+      }
+
+      protected function server_connectedHandler(event:Event):void
+      {
+        server.send("SUBSCRIBE A");
+      }      
+      protected function server_resultHandler(event:ResultEvent):void
+      {
+        trace("RESULT:"+event.result);   
+        trace("----------");
+      }
+
+
+
+
+    ]]>
+  </fx:Script>
+</s:Application>
