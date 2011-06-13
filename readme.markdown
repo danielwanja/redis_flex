@@ -1,11 +1,11 @@
-# redis_flex_ - An ActionScript Library to integrate with Redis
+# redis_flex - An ActionScript Library to integrate with Redis
 
 A minimalist Flex/ActionScript Library that allows to interact with redis, an advanced key-value store. See http://redis.io/
 
 
 ### Installing redis
 
-The easiest way on your mac is using homebrew:
+The easiest way on your mac to get redis is using homebrew:
 
 ```
   $ brew install redis
@@ -14,6 +14,12 @@ The easiest way on your mac is using homebrew:
 Check default redis configuration in /usr/local/etc/redis.conf
 
 ### redis basics
+
+You can start redis with the  redis-server command 
+
+```
+  $ redis-server
+```
 
 You can use the redis client from the console:
 
