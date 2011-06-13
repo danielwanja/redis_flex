@@ -38,21 +38,28 @@ TODO:
         socket.connect(hostName, port);
       }    
       
-      public function send(command:String):void {
+      public function send(command:*):void {
         command = encode(command);
         socket.writeUTFBytes(command);
       }
       
       /**
+	   * See http://redis.io/topics/protocol 
        *         *<number of arguments> CR LF
        *         $<number of bytes of argument 1> CR LF
        *         <argument data> CR LF
        *         ...
        *         $<number of bytes of argument N> CR LF
        *         <argument data> CR LF
+	   * 
+	   * @arg params - can be either the command as a String, i.e. "GET ABC" or 
+	   *               can be the parts in an array i.e. ["GET", "THIS IS A LONG VALUE"]
+	   * 
+	   * Note current implement of passing an array is to avoid having to deal with the string 
+	   * parsing.
        */
-      public function encode(command:String):String {
-        var parts:Array = command.split(" ");
+      public function encode(params:*):String {
+        var parts:Array =  params is Array ? params : params.split(" ");
         var result:Array = [];
         result.push("*"+parts.length);
         for each (var part:String in parts) {
